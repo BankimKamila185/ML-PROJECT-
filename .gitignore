@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+*.egg
+
+# ML artefacts
+backend/saved_models/*.joblib
+# keep metrics.json tracked if desired; remove next line to ignore it too
+# backend/saved_models/metrics.json
+
+# Database
+backend/*.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
