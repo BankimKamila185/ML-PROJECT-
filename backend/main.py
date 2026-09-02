@@ -127,16 +127,15 @@ app.add_middleware(
 )
 
 
-from fastapi.responses import FileResponse
-
-INDEX_HTML = os.path.join(BASE_DIR, "..", "index.html")
-
-# ── Frontend HTML Delivery ────────────────────────────────────────────────────
+# ── Root Welcome / API Status ──────────────────────────────────────────────────
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
-def serve_frontend():
-    if os.path.exists(INDEX_HTML):
-        return FileResponse(INDEX_HTML)
-    return {"message": "index.html not found"}
+def root():
+    return {
+        "message": "Student Performance Risk Prediction API is running",
+        "docs": "/docs",
+        "frontend": "http://localhost:5173",
+        "health": "/api/health"
+    }
 
 
 # ── API Endpoints ─────────────────────────────────────────────────────────────
