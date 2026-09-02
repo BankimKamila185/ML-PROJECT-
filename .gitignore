@@ -12,11 +12,12 @@ venv/
 *.egg
 
 # ML artefacts
+*.joblib
+saved_models/*.joblib
 backend/saved_models/*.joblib
-# keep metrics.json tracked if desired; remove next line to ignore it too
-# backend/saved_models/metrics.json
 
 # Database
+*.db
 backend/*.db
 
 # Environment

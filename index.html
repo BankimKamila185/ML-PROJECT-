@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduRisk AI - Student Performance Risk Prediction</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-nav { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    input[type=range] { accent-color: #6366f1; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-50 glass-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            EduRisk <span class="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">ML Classifier</span>
+          </h1>
+          <p class="text-xs text-slate-400">Student Performance Risk Classification</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-1 sm:space-x-2">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-brand-400 bg-brand-500/10">Dashboard</button>
+        <button onclick="switchTab('predict')" id="tab-predict" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200">Predict Risk</button>
+        <button onclick="switchTab('models')" id="tab-models" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200">Model Comparison</button>
+        <button onclick="switchTab('history')" id="tab-history" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200">History</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ═════════════════════ TAB 1: DASHBOARD ═════════════════════ -->
+    <section id="view-dashboard" class="space-y-8">
+      <!-- Welcome Banner -->
+      <div class="glass-card rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-slate-900/90 via-slate-800/80 to-brand-950/40 relative overflow-hidden">
+        <div class="relative z-10 max-w-2xl">
+          <span class="text-xs font-semibold uppercase tracking-wider text-brand-400 bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">Module V: Supervised Learning</span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-3">Early Warning Academic Risk System</h2>
+          <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+            Classifies student academic risk (<strong class="text-emerald-400">LOW</strong>, <strong class="text-amber-400">MEDIUM</strong>, <strong class="text-rose-400">HIGH</strong>) by comparing Logistic Regression, K-Nearest Neighbors, and Decision Tree pipelines.
+          </p>
+          <div class="mt-5 flex gap-3">
+            <button onclick="switchTab('predict')" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition shadow-lg shadow-brand-600/30 flex items-center gap-2">
+              Run Prediction &rarr;
+            </button>
+            <button onclick="switchTab('models')" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-sm transition border border-slate-700">
+              View Model Metrics
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Stat Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="glass-card rounded-xl p-5">
+          <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Total Predictions</span>
+          <p id="kpi-total" class="text-2xl font-bold text-white mt-2">0</p>
+          <span class="text-xs text-slate-500">Logged in database</span>
+        </div>
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-emerald-500">
+          <span class="text-xs text-emerald-400 font-medium uppercase tracking-wider">Low Risk</span>
+          <p id="kpi-low" class="text-2xl font-bold text-white mt-2">0</p>
+          <span class="text-xs text-slate-500">Good standing</span>
+        </div>
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-amber-500">
+          <span class="text-xs text-amber-400 font-medium uppercase tracking-wider">Medium Risk</span>
+          <p id="kpi-med" class="text-2xl font-bold text-white mt-2">0</p>
+          <span class="text-xs text-slate-500">Requires monitoring</span>
+        </div>
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-rose-500">
+          <span class="text-xs text-rose-400 font-medium uppercase tracking-wider">High Risk</span>
+          <p id="kpi-high" class="text-2xl font-bold text-white mt-2">0</p>
+          <span class="text-xs text-slate-500">Urgent intervention</span>
+        </div>
+        <div class="glass-card rounded-xl p-5 col-span-2 md:col-span-1 border-l-4 border-l-brand-500">
+          <span class="text-xs text-brand-400 font-medium uppercase tracking-wider">Best Model</span>
+          <p id="kpi-best-model" class="text-lg font-bold text-white mt-2 truncate">-</p>
+          <span id="kpi-best-f1" class="text-xs text-slate-400">F1 Score: -</span>
+        </div>
+      </div>
+
+      <!-- Quick Chart Preview -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="text-base font-bold text-white mb-4">Model Performance Overview (F1 Score & Accuracy)</h3>
+          <div class="h-64">
+            <canvas id="overviewChart"></canvas>
+          </div>
+        </div>
+        <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="text-base font-bold text-white mb-3">System Features</h3>
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span><strong>Three Classification Models:</strong> Multinomial Logistic Regression, K-Nearest Neighbors (k=7), and Decision Tree (max depth=10).</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span><strong>No Data Leakage:</strong> Preprocessing pipelines (imputation + StandardScaler) fitted strictly on training partition.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span><strong>F1 Score Auto-Selection:</strong> Balances precision and recall to protect against misclassifying high-risk students.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span><strong>Zero-Build Architecture:</strong> Self-contained in just 3 files, runs with a single Python command.</span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-400">
+            Backend API: <code class="text-brand-300">http://localhost:8000/api</code> | SQLite: <code class="text-brand-300">student_predictions.db</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ TAB 2: PREDICT RISK ═════════════════════ -->
+    <section id="view-predict" class="hidden space-y-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Input Form (7 cols) -->
+        <div class="lg:col-span-7 glass-card rounded-2xl p-6 sm:p-8">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-white">Student Feature Assessment</h2>
+              <p class="text-xs text-slate-400">Enter student metrics to predict risk level</p>
+            </div>
+            <!-- Presets -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400 font-medium">Presets:</span>
+              <button onclick="applyPreset('good')" class="text-xs px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 transition">High Performer</button>
+              <button onclick="applyPreset('border')" class="text-xs px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition">Borderline</button>
+              <button onclick="applyPreset('risk')" class="text-xs px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition">At-Risk</button>
+            </div>
+          </div>
+
+          <form id="prediction-form" onsubmit="handlePrediction(event)" class="space-y-5">
+            <!-- Student ID & Model Selection -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Student Identifier</label>
+                <input type="text" id="student_id" value="STU-2026-01" class="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500" required>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Model Selection</label>
+                <select id="model_name" class="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                  <option value="">Auto (Best Model Selected by F1)</option>
+                  <option value="Logistic Regression">Logistic Regression</option>
+                  <option value="KNN">K-Nearest Neighbors (KNN)</option>
+                  <option value="Decision Tree">Decision Tree</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="border-t border-slate-800 pt-4 space-y-4">
+              <!-- Feature 1: Attendance -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Attendance (%)</span>
+                  <span id="val_attendance" class="text-brand-400 font-bold">85%</span>
+                </div>
+                <input type="range" id="attendance" min="0" max="100" step="1" value="85" oninput="syncRange('attendance', '%')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+
+              <!-- Feature 2: Internal Marks -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Internal Examination Marks (0–100)</span>
+                  <span id="val_internal_marks" class="text-brand-400 font-bold">78</span>
+                </div>
+                <input type="range" id="internal_marks" min="0" max="100" step="1" value="78" oninput="syncRange('internal_marks', '')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+
+              <!-- Feature 3: Assignment Score -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Assignment Score (0–100)</span>
+                  <span id="val_assignment_score" class="text-brand-400 font-bold">82</span>
+                </div>
+                <input type="range" id="assignment_score" min="0" max="100" step="1" value="82" oninput="syncRange('assignment_score', '')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+
+              <!-- Feature 4: Previous GPA -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Previous Semester GPA (0–10.0)</span>
+                  <span id="val_previous_gpa" class="text-brand-400 font-bold">8.2</span>
+                </div>
+                <input type="range" id="previous_gpa" min="0" max="10" step="0.1" value="8.2" oninput="syncRange('previous_gpa', '')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+
+              <!-- Feature 5: Study Hours -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Daily Independent Study Hours (0–14 hrs)</span>
+                  <span id="val_study_hours" class="text-brand-400 font-bold">5.5 hrs</span>
+                </div>
+                <input type="range" id="study_hours" min="0" max="14" step="0.5" value="5.5" oninput="syncRange('study_hours', ' hrs')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+
+              <!-- Feature 6: Backlogs -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Pending Backlogs (Count)</span>
+                  <span id="val_backlogs" class="text-brand-400 font-bold">0</span>
+                </div>
+                <input type="range" id="backlogs" min="0" max="8" step="1" value="0" oninput="syncRange('backlogs', '')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+
+              <!-- Feature 7: Class Participation -->
+              <div>
+                <div class="flex justify-between text-xs font-medium mb-1">
+                  <span class="text-slate-300">Class Participation (%)</span>
+                  <span id="val_class_participation" class="text-brand-400 font-bold">75%</span>
+                </div>
+                <input type="range" id="class_participation" min="0" max="100" step="1" value="75" oninput="syncRange('class_participation', '%')" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+              </div>
+            </div>
+
+            <button type="submit" id="btn-predict" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-500 font-semibold text-white shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Predict Academic Risk
+            </button>
+          </form>
+        </div>
+
+        <!-- Prediction Result Card (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div id="result-placeholder" class="glass-card rounded-2xl p-8 text-center flex flex-col items-center justify-center min-h-[360px]">
+            <div class="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-3">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h3 class="text-base font-semibold text-slate-300">Ready for Assessment</h3>
+            <p class="text-xs text-slate-500 mt-1 max-w-xs">Adjust the student's metrics and click Predict to evaluate their risk level.</p>
+          </div>
+
+          <!-- Active Result Box -->
+          <div id="result-card" class="hidden glass-card rounded-2xl p-6 space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <span class="text-xs text-slate-400 font-medium">Evaluation Result</span>
+                <h3 id="res-student-id" class="text-base font-bold text-white">STU-001</h3>
+              </div>
+              <span id="res-model-badge" class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Model: -</span>
+            </div>
+
+            <!-- Risk Badge Banner -->
+            <div id="res-badge-container" class="rounded-xl p-5 text-center">
+              <span class="text-xs uppercase tracking-wider font-semibold opacity-80">Predicted Risk Level</span>
+              <h2 id="res-risk-level" class="text-3xl font-black mt-1">LOW</h2>
+              <p id="res-confidence" class="text-xs mt-1 opacity-90">Confidence: 94.2%</p>
+            </div>
+
+            <!-- Class Probabilities -->
+            <div>
+              <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Class Probabilities</h4>
+              <div class="space-y-2 text-xs">
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-emerald-400">LOW Risk</span>
+                    <span id="prob-low-text" class="font-bold">0%</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div id="prob-low-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-amber-400">MEDIUM Risk</span>
+                    <span id="prob-med-text" class="font-bold">0%</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div id="prob-med-bar" class="bg-amber-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-rose-400">HIGH Risk</span>
+                    <span id="prob-high-text" class="font-bold">0%</span>
+                  </div>
+                  <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div id="prob-high-bar" class="bg-rose-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Academic Intervention Recommendations -->
+            <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/60">
+              <span class="text-xs font-semibold uppercase tracking-wider text-brand-400">Advisor Recommendation</span>
+              <p id="res-recommendation" class="text-xs text-slate-300 mt-2 leading-relaxed">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ TAB 3: MODEL COMPARISON ═════════════════════ -->
+    <section id="view-models" class="hidden space-y-8">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Supervised Learning Model Comparison</h2>
+        <p class="text-sm text-slate-400 mt-1">Evaluation of Logistic Regression, KNN, and Decision Tree on the 20% stratified test set.</p>
+      </div>
+
+      <!-- Metrics Table -->
+      <div class="glass-card rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+          <h3 class="text-sm font-bold text-white">Performance Metrics</h3>
+          <span class="text-xs text-brand-400">Target metric: Weighted F1 Score</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-800/60 text-xs uppercase tracking-wider text-slate-400">
+              <tr>
+                <th class="py-3 px-6">Algorithm</th>
+                <th class="py-3 px-6">Accuracy</th>
+                <th class="py-3 px-6">Precision</th>
+                <th class="py-3 px-6">Recall</th>
+                <th class="py-3 px-6">F1 Score</th>
+                <th class="py-3 px-6 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="models-table-body" class="divide-y divide-slate-800 text-slate-200">
+              <tr><td colspan="6" class="py-4 text-center text-slate-500">Loading model metrics...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Comparison Chart -->
+      <div class="glass-card rounded-2xl p-6">
+        <h3 class="text-base font-bold text-white mb-4">Metric Comparison Across Algorithms</h3>
+        <div class="h-80">
+          <canvas id="comparisonChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Confusion Matrices Section -->
+      <div>
+        <h3 class="text-lg font-bold text-white mb-4">Confusion Matrices (Actual vs Predicted)</h3>
+        <div id="confusion-matrices-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ═════════════════════ TAB 4: HISTORY ═════════════════════ -->
+    <section id="view-history" class="hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white">Prediction Audit Log</h2>
+          <p class="text-sm text-slate-400 mt-1">Permanent SQLite prediction history with student features and classifications.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select id="filter-risk" onchange="loadHistory()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-3 py-2 text-white">
+            <option value="">All Risk Levels</option>
+            <option value="LOW">Low Risk Only</option>
+            <option value="MEDIUM">Medium Risk Only</option>
+            <option value="HIGH">High Risk Only</option>
+          </select>
+          <button onclick="loadHistory()" class="text-xs px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-800/60 text-xs uppercase tracking-wider text-slate-400">
+              <tr>
+                <th class="py-3 px-4">Student ID</th>
+                <th class="py-3 px-4">Attendance</th>
+                <th class="py-3 px-4">Internal</th>
+                <th class="py-3 px-4">GPA</th>
+                <th class="py-3 px-4">Study Hrs</th>
+                <th class="py-3 px-4">Backlogs</th>
+                <th class="py-3 px-4">Risk Level</th>
+                <th class="py-3 px-4">Confidence</th>
+                <th class="py-3 px-4">Model</th>
+                <th class="py-3 px-4">Date</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body" class="divide-y divide-slate-800 text-slate-200">
+              <tr><td colspan="10" class="py-8 text-center text-slate-500">No predictions recorded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Script Logic -->
+  <script>
+    let overviewChartInstance = null;
+    let comparisonChartInstance = null;
+    let cachedMetrics = null;
+
+    // ── Tab Switching ──────────────────────────────────────────────────────────
+    function switchTab(tabId) {
+      ['dashboard', 'predict', 'models', 'history'].forEach(tab => {
+        const view = document.getElementById(`view-${tab}`);
+        const btn = document.getElementById(`tab-${tab}`);
+        if (tab === tabId) {
+          view.classList.remove('hidden');
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-brand-400 bg-brand-500/10';
+        } else {
+          view.classList.add('hidden');
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200';
+        }
+      });
+
+      if (tabId === 'dashboard') loadDashboard();
+      if (tabId === 'models') loadModels();
+      if (tabId === 'history') loadHistory();
+    }
+
+    function syncRange(id, suffix) {
+      const val = document.getElementById(id).value;
+      document.getElementById(`val_${id}`).innerText = val + suffix;
+    }
+
+    function applyPreset(type) {
+      if (type === 'good') {
+        setFormValues({ attendance: 92, internal_marks: 88, assignment_score: 90, previous_gpa: 8.8, study_hours: 6.5, backlogs: 0, class_participation: 85 });
+      } else if (type === 'border') {
+        setFormValues({ attendance: 72, internal_marks: 60, assignment_score: 65, previous_gpa: 6.5, study_hours: 3.5, backlogs: 1, class_participation: 60 });
+      } else {
+        setFormValues({ attendance: 48, internal_marks: 35, assignment_score: 42, previous_gpa: 4.5, study_hours: 1.0, backlogs: 3, class_participation: 30 });
+      }
+    }
+
+    function setFormValues(v) {
+      for (const [key, val] of Object.entries(v)) {
+        const el = document.getElementById(key);
+        if (el) {
+          el.value = val;
+          const suffix = key === 'attendance' || key === 'class_participation' ? '%' : (key === 'study_hours' ? ' hrs' : '');
+          document.getElementById(`val_${key}`).innerText = val + suffix;
+        }
+      }
+    }
+
+    // ── API: Load Dashboard ───────────────────────────────────────────────────
+    async function loadDashboard() {
+      try {
+        const [dashRes, modelsRes] = await Promise.all([
+          fetch('/api/dashboard').then(r => r.json()),
+          fetch('/api/models').then(r => r.json())
+        ]);
+
+        document.getElementById('kpi-total').innerText = dashRes.total || 0;
+        document.getElementById('kpi-low').innerText = dashRes.low || 0;
+        document.getElementById('kpi-med').innerText = dashRes.medium || 0;
+        document.getElementById('kpi-high').innerText = dashRes.high || 0;
+        document.getElementById('kpi-best-model').innerText = dashRes.best_model || 'None';
+        document.getElementById('kpi-best-f1').innerText = `F1: ${(dashRes.best_model_f1 * 100).toFixed(1)}% | Acc: ${(dashRes.best_model_accuracy * 100).toFixed(1)}%`;
+
+        cachedMetrics = modelsRes;
+        renderOverviewChart(modelsRes);
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      }
+    }
+
+    function renderOverviewChart(data) {
+      const ctx = document.getElementById('overviewChart');
+      if (!ctx) return;
+      const labels = Object.keys(data.models);
+      const f1Data = labels.map(m => (data.models[m].f1_score * 100).toFixed(1));
+      const accData = labels.map(m => (data.models[m].accuracy * 100).toFixed(1));
+
+      if (overviewChartInstance) overviewChartInstance.destroy();
+
+      overviewChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'F1 Score (%)', data: f1Data, backgroundColor: '#6366f1' },
+            { label: 'Accuracy (%)', data: accData, backgroundColor: '#38bdf8' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' } } },
+          scales: {
+            y: { min: 50, max: 100, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // ── API: Predict ──────────────────────────────────────────────────────────
+    async function handlePrediction(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-predict');
+      btn.disabled = true;
+      btn.innerText = 'Calculating Classification...';
+
+      const payload = {
+        student_id: document.getElementById('student_id').value,
+        model_name: document.getElementById('model_name').value || null,
+        attendance: parseFloat(document.getElementById('attendance').value),
+        internal_marks: parseFloat(document.getElementById('internal_marks').value),
+        assignment_score: parseFloat(document.getElementById('assignment_score').value),
+        previous_gpa: parseFloat(document.getElementById('previous_gpa').value),
+        study_hours: parseFloat(document.getElementById('study_hours').value),
+        backlogs: parseInt(document.getElementById('backlogs').value),
+        class_participation: parseFloat(document.getElementById('class_participation').value),
+      };
+
+      try {
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Prediction API error');
+        const data = await res.json();
+
+        // Render Results
+        document.getElementById('result-placeholder').classList.add('hidden');
+        const resultCard = document.getElementById('result-card');
+        resultCard.classList.remove('hidden');
+
+        document.getElementById('res-student-id').innerText = payload.student_id;
+        document.getElementById('res-model-badge').innerText = `Model: ${data.model}`;
+        document.getElementById('res-risk-level').innerText = data.risk_level;
+        document.getElementById('res-confidence').innerText = `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
+        document.getElementById('res-recommendation').innerText = data.recommendation;
+
+        const badgeContainer = document.getElementById('res-badge-container');
+        if (data.risk_level === 'LOW') {
+          badgeContainer.className = 'rounded-xl p-5 text-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        } else if (data.risk_level === 'MEDIUM') {
+          badgeContainer.className = 'rounded-xl p-5 text-center bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        } else {
+          badgeContainer.className = 'rounded-xl p-5 text-center bg-rose-500/20 text-rose-300 border border-rose-500/30';
+        }
+
+        // Probabilities
+        const lowP = ((data.probabilities.LOW || 0) * 100).toFixed(1);
+        const medP = ((data.probabilities.MEDIUM || 0) * 100).toFixed(1);
+        const highP = ((data.probabilities.HIGH || 0) * 100).toFixed(1);
+
+        document.getElementById('prob-low-text').innerText = `${lowP}%`;
+        document.getElementById('prob-low-bar').style.width = `${lowP}%`;
+        document.getElementById('prob-med-text').innerText = `${medP}%`;
+        document.getElementById('prob-med-bar').style.width = `${medP}%`;
+        document.getElementById('prob-high-text').innerText = `${highP}%`;
+        document.getElementById('prob-high-bar').style.width = `${highP}%`;
+
+      } catch (err) {
+        alert(`Prediction failed: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Predict Academic Risk`;
+      }
+    }
+
+    // ── API: Load Models ──────────────────────────────────────────────────────
+    async function loadModels() {
+      try {
+        const res = await fetch('/api/models');
+        const data = await res.json();
+        cachedMetrics = data;
+
+        const tbody = document.getElementById('models-table-body');
+        tbody.innerHTML = '';
+
+        for (const [name, m] of Object.entries(data.models)) {
+          const isBest = name === data.best_model;
+          const tr = document.createElement('tr');
+          tr.className = isBest ? 'bg-brand-500/10 font-semibold' : '';
+          tr.innerHTML = `
+            <td class="py-3 px-6 flex items-center gap-2">
+              ${isBest ? '<span class="text-amber-400 font-bold text-xs">&#9733;</span>' : ''}
+              <span>${name}</span>
+            </td>
+            <td class="py-3 px-6">${(m.accuracy * 100).toFixed(2)}%</td>
+            <td class="py-3 px-6">${(m.precision * 100).toFixed(2)}%</td>
+            <td class="py-3 px-6">${(m.recall * 100).toFixed(2)}%</td>
+            <td class="py-3 px-6 text-brand-400 font-bold">${(m.f1_score * 100).toFixed(2)}%</td>
+            <td class="py-3 px-6 text-center">
+              ${isBest 
+                ? '<span class="px-2.5 py-0.5 rounded-full text-xs bg-brand-500/20 text-brand-300 border border-brand-500/30">BEST MODEL</span>' 
+                : '<span class="text-xs text-slate-500">Evaluated</span>'}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        // Render Comparison Chart
+        renderComparisonChart(data);
+
+        // Render Confusion Matrices
+        renderConfusionMatrices(data);
+
+      } catch (err) {
+        console.error('Failed to load models:', err);
+      }
+    }
+
+    function renderComparisonChart(data) {
+      const ctx = document.getElementById('comparisonChart');
+      if (!ctx) return;
+      const labels = Object.keys(data.models);
+
+      if (comparisonChartInstance) comparisonChartInstance.destroy();
+
+      comparisonChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Accuracy (%)', data: labels.map(m => (data.models[m].accuracy * 100).toFixed(1)), backgroundColor: '#38bdf8' },
+            { label: 'Precision (%)', data: labels.map(m => (data.models[m].precision * 100).toFixed(1)), backgroundColor: '#a855f7' },
+            { label: 'Recall (%)', data: labels.map(m => (data.models[m].recall * 100).toFixed(1)), backgroundColor: '#10b981' },
+            { label: 'F1 Score (%)', data: labels.map(m => (data.models[m].f1_score * 100).toFixed(1)), backgroundColor: '#6366f1' },
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' } } },
+          scales: {
+            y: { min: 40, max: 100, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderConfusionMatrices(data) {
+      const container = document.getElementById('confusion-matrices-grid');
+      container.innerHTML = '';
+
+      for (const [name, m] of Object.entries(data.models)) {
+        const cm = m.confusion_matrix;
+        const card = document.createElement('div');
+        card.className = 'glass-card rounded-xl p-5';
+        card.innerHTML = `
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-sm font-bold text-white">${name}</h4>
+            <span class="text-xs text-brand-300">F1: ${(m.f1_score * 100).toFixed(1)}%</span>
+          </div>
+          <div class="text-xs text-slate-400 mb-2">Rows = Actual, Columns = Predicted</div>
+          <div class="grid grid-cols-4 gap-1 text-center font-mono text-xs">
+            <div class="text-slate-500 font-sans text-[10px] py-1">Act\\Pred</div>
+            <div class="text-emerald-400 font-bold py-1">LOW</div>
+            <div class="text-amber-400 font-bold py-1">MED</div>
+            <div class="text-rose-400 font-bold py-1">HIGH</div>
+
+            <div class="text-emerald-400 font-bold py-1.5">LOW</div>
+            <div class="p-1.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">${cm[0][0]}</div>
+            <div class="p-1.5 rounded bg-slate-800/80 text-slate-300">${cm[0][1]}</div>
+            <div class="p-1.5 rounded bg-slate-800/80 text-slate-300">${cm[0][2]}</div>
+
+            <div class="text-amber-400 font-bold py-1.5">MED</div>
+            <div class="p-1.5 rounded bg-slate-800/80 text-slate-300">${cm[1][0]}</div>
+            <div class="p-1.5 rounded bg-amber-500/20 text-amber-300 font-bold">${cm[1][1]}</div>
+            <div class="p-1.5 rounded bg-slate-800/80 text-slate-300">${cm[1][2]}</div>
+
+            <div class="text-rose-400 font-bold py-1.5">HIGH</div>
+            <div class="p-1.5 rounded bg-slate-800/80 text-slate-300">${cm[2][0]}</div>
+            <div class="p-1.5 rounded bg-slate-800/80 text-slate-300">${cm[2][1]}</div>
+            <div class="p-1.5 rounded bg-rose-500/20 text-rose-300 font-bold">${cm[2][2]}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    // ── API: Load History ─────────────────────────────────────────────────────
+    async function loadHistory() {
+      const risk = document.getElementById('filter-risk').value;
+      const url = risk ? `/api/history?risk_filter=${risk}` : '/api/history';
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const tbody = document.getElementById('history-table-body');
+        tbody.innerHTML = '';
+
+        if (!data.records || data.records.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="py-8 text-center text-slate-500">No predictions matching filter.</td></tr>`;
+          return;
+        }
+
+        data.records.forEach(r => {
+          const badgeClass = r.risk_level === 'LOW' 
+            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+            : (r.risk_level === 'MEDIUM' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30');
+
+          const dateStr = r.created_at ? new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-white">${r.student_id}</td>
+            <td class="py-3 px-4">${r.attendance}%</td>
+            <td class="py-3 px-4">${r.internal_marks}</td>
+            <td class="py-3 px-4">${r.previous_gpa}</td>
+            <td class="py-3 px-4">${r.study_hours}h</td>
+            <td class="py-3 px-4">${r.backlogs}</td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-xs font-bold border ${badgeClass}">${r.risk_level}</span>
+            </td>
+            <td class="py-3 px-4">${(r.confidence * 100).toFixed(0)}%</td>
+            <td class="py-3 px-4 text-xs text-slate-400">${r.model_used}</td>
+            <td class="py-3 px-4 text-xs text-slate-500">${dateStr}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        console.error('Failed to load history:', err);
+      }
+    }
+
+    // Initial Load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboard();
+    });
+  </script>
+</body>
+</html>
